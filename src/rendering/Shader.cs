@@ -1,4 +1,6 @@
-﻿using Silk.NET.OpenGL;
+﻿using Silk.NET.Maths;
+using Silk.NET.OpenGL;
+using System.Numerics;
 
 namespace Kobra.Rendering
 {
@@ -58,6 +60,12 @@ namespace Kobra.Rendering
             }
 
             return shader;
+        }
+
+        public unsafe void SetMatrix4(string name, Matrix4X4<float> matrix)
+        {
+            int location = _gl.GetUniformLocation(Handle, name);
+            _gl.UniformMatrix4(location, 1, false, (float*)&matrix);
         }
 
         public void Use()

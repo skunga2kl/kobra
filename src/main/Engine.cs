@@ -31,6 +31,8 @@ public class Engine
     private void OnLoad()
     {
         _gl = GL.GetApi(_window);
+
+        _gl.Enable(EnableCap.DepthTest);
         _renderer = new Renderer(_gl);
 
         _shader = new KShader(_gl, "shader/basicvert.vert", "shader/basicfrag.frag");
@@ -40,6 +42,22 @@ public class Engine
 
     private void OnRender(double deltaTime)
     {
+        _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+        var projection = Matrix4X4.CreatePerspectiveFieldOfView(
+            MathF.PI / 4f,
+            (float)_window.Size.X / _window.Size.Y,
+            0.1f,
+            100f
+        );
+
+        var view = Matrix4X4.CreateTranslation(0f, 0f, -3f);
+        var model = Matrix4X4.CreateRotationY((float)_window.Time);
+        var mvp = model * view * projection;
+
+        _shader.Use();
+        _shader.SetMatrix4("u_MVP", mvp);
+
         _renderer.Clear();
         _renderer.Draw(_shader, _cube);
     }
