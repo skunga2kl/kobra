@@ -15,11 +15,11 @@ namespace Kobra.Rendering
 
         public void Clear() => _gl.Clear(ClearBufferMask.ColorBufferBit);
 
-        public void Draw(KShader shader, KVertexArray vao)
+        public void Draw(KShader shader, Mesh mesh)
         {
             shader.Use();
-            vao.Bind();
-            _gl.DrawArrays(PrimitiveType.Triangles, 0, 3);
+            mesh.VAO.Bind();
+            _gl.DrawArrays(PrimitiveType.Triangles, 0, mesh.VertexCount);
         }
     }
 }

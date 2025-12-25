@@ -11,7 +11,7 @@ public class Engine
     private GL _gl;
     private Renderer _renderer;
     private KShader _shader;
-    private KVertexArray _triangle;
+    private Mesh _cube;
 
     public Engine()
     {
@@ -33,32 +33,15 @@ public class Engine
         _gl = GL.GetApi(_window);
         _renderer = new Renderer(_gl);
 
-        string vertexShader = @"
-            #version 450 core
-            layout(location = 0) in vec3 aPosition;
-            void main() { gl_Position = vec4(aPosition, 1.0); }
-        ";
-        string fragmentShader = @"
-            #version 450 core
-            out vec4 FragColor;
-            void main() { FragColor = vec4(0.9, 0.2, 0.3, 1.0); }
-        ";
-
-        _shader = new KShader(_gl, vertexShader, fragmentShader);
-
-        float[] triangleVerts =
-        {
-             0.0f,  0.5f, 0.0f,
-            -0.5f, -0.5f, 0.0f,
-             0.5f, -0.5f, 0.0f
-        };
-        _triangle = new KVertexArray(_gl, triangleVerts);
+        _shader = new KShader(_gl, "shader/basicvert.vert", "shader/basicfrag.frag");
+        var vertices = new Vertices();
+        _cube = new Mesh(_gl, vertices.cubeVertices, 6);
     }
 
     private void OnRender(double deltaTime)
     {
         _renderer.Clear();
-        _renderer.Draw(_shader, _triangle);
+        _renderer.Draw(_shader, _cube);
     }
 
     private void OnClose() { }

@@ -7,9 +7,22 @@ namespace Kobra.Rendering
         private readonly GL _gl;
         public readonly uint Handle;
 
-        public KShader(GL gl, string vertexSource, string fragmentSource)
+        public KShader(GL gl, string vertexPath, string fragmentPath)
         {
             _gl = gl;
+
+            if (!File.Exists(vertexPath))
+            {
+                throw new FileNotFoundException($"Vertex shader not found: {vertexPath}");
+            }
+
+            if (!File.Exists(fragmentPath))
+            {
+                throw new FileNotFoundException($"Fragment shader not found: {fragmentPath}");
+            }
+
+            string vertexSource = File.ReadAllText(vertexPath);
+            string fragmentSource = File.ReadAllText(fragmentPath);
 
             uint vertex = CompileShader(ShaderType.VertexShader, vertexSource);
             uint fragment = CompileShader(ShaderType.FragmentShader, fragmentSource);
@@ -18,6 +31,13 @@ namespace Kobra.Rendering
             _gl.AttachShader(Handle, vertex);
             _gl.AttachShader(Handle, fragment);
             _gl.LinkProgram(Handle);
+
+            _gl.GetProgram(Handle, ProgramPropertyARB.LinkStatus, out int status);
+            if (status == 0)
+            {
+                string info = _gl.GetProgramInfoLog(Handle);
+                throw new Exception($"Error linking shader program: {info}");
+            }
 
             _gl.DeleteShader(vertex);
             _gl.DeleteShader(fragment);

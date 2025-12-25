@@ -30,8 +30,25 @@ namespace Kobra.Rendering
                 }
             }
 
-            _gl.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), (void*)0);
+            _gl.VertexAttribPointer(
+                0,
+                3,
+                VertexAttribPointerType.Float,
+                false,
+                (uint)(6 * sizeof(float)),
+                (void*)0
+            );
             _gl.EnableVertexAttribArray(0);
+
+            _gl.VertexAttribPointer(
+                1,
+                3,
+                VertexAttribPointerType.Float,
+                false,
+                (uint)(6 * sizeof(float)),
+                (void*)(3 * sizeof(float))
+            );
+            _gl.EnableVertexAttribArray(1);
         }
 
         public void Bind()
