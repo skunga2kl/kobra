@@ -2,6 +2,7 @@
 using Silk.NET.OpenGL;
 using Silk.NET.Maths;
 using Kobra.Rendering;
+using Kobra.Scene;
 
 namespace Kobra.Main;
 
@@ -12,6 +13,7 @@ public class Engine
     private Renderer _renderer;
     private KShader _shader;
     private Mesh _cube;
+    private Camera _camera;
 
     public Engine()
     {
@@ -34,6 +36,7 @@ public class Engine
 
         _gl.Enable(EnableCap.DepthTest);
         _renderer = new Renderer(_gl);
+        _camera ??= new Camera();
 
         _shader = new KShader(_gl, "shader/basicvert.vert", "shader/basicfrag.frag");
         var vertices = new Vertices();
@@ -44,14 +47,11 @@ public class Engine
     {
         _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-        var projection = Matrix4X4.CreatePerspectiveFieldOfView(
-            MathF.PI / 4f,
-            (float)_window.Size.X / _window.Size.Y,
-            0.1f,
-            100f
-        );
+        var aspect = _window.Size.X / (float)_window.Size.Y;
 
-        var view = Matrix4X4.CreateTranslation(0f, 0f, -3f);
+        var projection = _camera.GetProjectionMatrix(aspect);
+
+        var view = _camera.GetViewMatrix();
         var model = Matrix4X4.CreateRotationY((float)_window.Time);
         var mvp = model * view * projection;
 
