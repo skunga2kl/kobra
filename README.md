@@ -1,4 +1,4 @@
-# kobra
+<img width="200" height="75" alt="kobralogo" src="https://github.com/user-attachments/assets/d9ae5852-4bf3-4d5c-b559-1d25e06d788a" />
 
 ## what is it?
 
