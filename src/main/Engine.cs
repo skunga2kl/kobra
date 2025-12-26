@@ -1,10 +1,10 @@
-﻿using Silk.NET.Windowing;
-using Silk.NET.OpenGL;
-using Silk.NET.Maths;
-using Silk.NET.Input;
-using Kobra.Rendering;
+﻿using Kobra.Rendering;
 using Kobra.Scene;
-using Kobra.Console;
+using Silk.NET.Input;
+using Silk.NET.Maths;
+using Silk.NET.OpenGL;
+using Silk.NET.Windowing;
+using System.Numerics;
 
 namespace Kobra.Main;
 
@@ -15,7 +15,7 @@ public class Engine
     private Renderer _renderer;
     private KShader _shader;
     private KScene _scene;
-    private KConsole _console;
+    private Random _random = new Random();
 
     private Mesh _cube;
     private Camera _camera;
@@ -53,7 +53,6 @@ public class Engine
         _renderer = new Renderer(_gl);
         _camera ??= new Camera();
         _scene = new KScene();
-        _console = new KConsole(_scene);
 
         _shader = new KShader(_gl, "shader/basicvert.vert", "shader/basicfrag.frag");
         var vertices = new Vertices();
@@ -83,6 +82,38 @@ public class Engine
 
             if (_keyboard.IsKeyPressed(Key.D))
                 _camera.Transform.Position += _camera.Right * speed;
+
+            if (_keyboard.IsKeyPressed(Key.F1))
+            {
+                var cube = Helpers.CreateMesh(_gl); 
+
+                float x = (float)(_random.NextDouble() * 10);
+                float y = (float)(_random.NextDouble() * 10);
+                float z = (float)(_random.NextDouble() * 10);
+
+                cube.Transform.Position = new Vector3D<float>(x, y, z);
+
+                cube.Transform.Rotation = new Vector3D<float>(
+                    (float)(_random.NextDouble() * 360),
+                    (float)(_random.NextDouble() * 360),
+                    (float)(_random.NextDouble() * 360)
+                );
+
+                _scene.AddMesh(cube);
+            }
+
+            if (_keyboard.IsKeyPressed(Key.F2))
+            {
+                int count = _scene.Meshes.Count;
+                Console.WriteLine($"There are {count} cubes in the scene.");
+
+                for (int i = 0; i < _scene.Meshes.Count; i++)
+                {
+                    var mesh = _scene.Meshes[i];
+                    var pos = mesh.Transform.Position;
+                    Console.WriteLine($"{i}: ({pos.X:F2}, {pos.Y:F2}, {pos.Z:F2})");
+                }
+            }
         }
 
         _renderer.Clear();
