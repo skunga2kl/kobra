@@ -1,13 +1,17 @@
 ﻿using Kobra.Rendering;
+using Kobra.Graphics;
 
 namespace Kobra.Scene
 {
     public class KScene
     {
         public List<Mesh> Meshes { get; private set; }
+        public List<DirectionalLight> DirectionalLights { get; private set; }
+
         public KScene()
         {
             Meshes = new List<Mesh>();
+            DirectionalLights = new List<DirectionalLight>();
         }
         public void AddMesh(Mesh mesh)
         {

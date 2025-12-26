@@ -74,6 +74,12 @@ namespace Kobra.Rendering
             _gl.Uniform3(location, value.X, value.Y, value.Z);
         }
 
+        public void SetFloat(string name, float value)
+        {
+            int location = _gl.GetUniformLocation(Handle, name);
+            _gl.Uniform1(location, value);
+        }
+
         public void Use()
         {
             _gl.UseProgram(Handle);

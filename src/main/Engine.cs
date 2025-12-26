@@ -1,10 +1,10 @@
-﻿using Kobra.Rendering;
+﻿using Kobra.Graphics;
+using Kobra.Rendering;
 using Kobra.Scene;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
-using System.Numerics;
 
 namespace Kobra.Main;
 
@@ -18,6 +18,11 @@ public class Engine
     private Random _random = new Random();
 
     private Mesh _cube;
+    private DirectionalLight _light = new DirectionalLight(
+        new Vector3D<float>(-1f, -1f, -1f),
+        new Vector3D<float>(1.0f, 1.0f, 1.0f),
+        1.0f
+    );
     private Camera _camera;
 
     private IInputContext _input;
@@ -44,9 +49,12 @@ public class Engine
 
         _input = _window.CreateInput();
         _keyboard = _input.Keyboards.FirstOrDefault();
-        if (_keyboard is null)
+        if (_input != null)
         {
-            System.Console.WriteLine("no keyboard found");
+            if (_keyboard is null)
+            {
+                System.Console.WriteLine("no keyboard found");
+            }
         }
 
         _gl.Enable(EnableCap.DepthTest);
@@ -57,6 +65,7 @@ public class Engine
         _shader = new KShader(_gl, "shader/basicvert.vert", "shader/basicfrag.frag");
         var vertices = new Vertices();
         _cube = new Mesh(_gl, vertices.cubeVertices, 6);
+        _scene.AddMesh(_cube);
     }
 
     private void OnRender(double deltaTime)
@@ -65,7 +74,7 @@ public class Engine
 
         var aspect = _window.Size.X / (float)_window.Size.Y;
         var projection = _camera.GetProjectionMatrix(aspect);
-        var view = _camera.GetViewMatrix();
+        var view = _camera.GetViewMatrix(); 
 
         float speed = 3f * (float)deltaTime;
 
@@ -99,32 +108,40 @@ public class Engine
                     (float)(_random.NextDouble() * 360)
                 );
 
+                cube.Material.Color = new Vector3D<float>(
+                    (float)_random.NextDouble(),
+                    (float)_random.NextDouble(),
+                    (float)_random.NextDouble()
+                );
+
                 _scene.AddMesh(cube);
             }
 
             if (_keyboard.IsKeyPressed(Key.F2))
             {
-                int count = _scene.Meshes.Count;
-                Console.WriteLine($"There are {count} cubes in the scene.");
-
-                for (int i = 0; i < _scene.Meshes.Count; i++)
-                {
-                    var mesh = _scene.Meshes[i];
-                    var pos = mesh.Transform.Position;
-                    Console.WriteLine($"{i}: ({pos.X:F2}, {pos.Y:F2}, {pos.Z:F2})");
-                }
+                var count = _scene.Meshes.Count;
+                Console.WriteLine($"scene has {count} meshes");
             }
         }
 
         _renderer.Clear();
         _shader.Use();
 
+        _shader.SetVec3("u_LightDirection", _light.Direction);
+        _shader.SetVec3("u_LightColor", _light.Color);
+        _shader.SetFloat("u_Intensity", _light.Intensity);
+        _shader.SetVec3("u_ViewPos", _camera.Transform.Position);
+
         _scene.AddMesh(_cube);
 
         foreach (var mesh in _scene.Meshes)
         {
+            _shader.SetVec3("u_ObjectColor", mesh.Material.Color);
+
             var model = mesh.Transform.GetModelMatrix();
             var mvp = model * view * projection;
+
+            _shader.SetMatrix4("u_Model", model);  
             _shader.SetMatrix4("u_MVP", mvp);
 
             mesh.Material.Apply(_shader);

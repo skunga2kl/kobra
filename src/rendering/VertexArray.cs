@@ -30,23 +30,25 @@ namespace Kobra.Rendering
                 }
             }
 
+            int stride = 6 * sizeof(float); 
+
             _gl.VertexAttribPointer(
-                0,
-                3,
-                VertexAttribPointerType.Float,
-                false,
-                (uint)(6 * sizeof(float)),
-                (void*)0
+                0,                       
+                3,                        
+                GLEnum.Float,             
+                false,                   
+                (uint)stride,             
+                (void*)0                  
             );
             _gl.EnableVertexAttribArray(0);
 
             _gl.VertexAttribPointer(
-                1,
-                3,
-                VertexAttribPointerType.Float,
+                1,                        
+                3,                        
+                GLEnum.Float,           
                 false,
-                (uint)(6 * sizeof(float)),
-                (void*)(3 * sizeof(float))
+                (uint)stride,
+                (void*)(3 * sizeof(float)) 
             );
             _gl.EnableVertexAttribArray(1);
         }
