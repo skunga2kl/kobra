@@ -68,6 +68,12 @@ namespace Kobra.Rendering
             _gl.UniformMatrix4(location, 1, false, (float*)&matrix);
         }
 
+        public void SetVec3(string name, Vector3D<float> value)
+        {
+            int location = _gl.GetUniformLocation(Handle, name);
+            _gl.Uniform3(location, value.X, value.Y, value.Z);
+        }
+
         public void Use()
         {
             _gl.UseProgram(Handle);

@@ -89,6 +89,10 @@ public class Engine
         _shader.Use();
         _shader.SetMatrix4("u_MVP", mvp);
 
+        
+        _cube.Material.Apply(_shader);
+        _cube.Material.Color = new Vector3D<float>(0f, 1f, 0f);
+
         _renderer.Clear();
         _renderer.Draw(_shader, _cube);
     }
