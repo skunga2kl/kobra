@@ -70,6 +70,7 @@ public class Engine
 
         float speed = 3f * (float)deltaTime;
 
+
         if (_keyboard != null)
         {
             if (_keyboard.IsKeyPressed(Key.W))
