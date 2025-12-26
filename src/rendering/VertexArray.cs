@@ -1,13 +1,13 @@
 ﻿using Silk.NET.OpenGL;
-using System.Runtime.CompilerServices;
 
 namespace Kobra.Rendering
 {
-    public class KVertexArray
+    public class KVertexArray : IDisposable
     {   
         private readonly GL _gl;
         public readonly uint Handle;
         private readonly uint _vbo;
+        private bool _disposed = false;
 
         public unsafe KVertexArray(GL gl, float[] vertices)
         {
@@ -49,6 +49,15 @@ namespace Kobra.Rendering
                 (void*)(3 * sizeof(float))
             );
             _gl.EnableVertexAttribArray(1);
+        }
+
+        public void Dispose()
+        {
+            _gl.DeleteBuffer(_vbo);
+            _gl.DeleteVertexArray(Handle);
+            GC.SuppressFinalize(this);
+
+            _disposed = true;
         }
 
         public void Bind()

@@ -4,6 +4,7 @@ using Silk.NET.Maths;
 using Silk.NET.Input;
 using Kobra.Rendering;
 using Kobra.Scene;
+using Kobra.Console;
 
 namespace Kobra.Main;
 
@@ -13,8 +14,12 @@ public class Engine
     private GL _gl;
     private Renderer _renderer;
     private KShader _shader;
+    private KScene _scene;
+    private KConsole _console;
+
     private Mesh _cube;
     private Camera _camera;
+
     private IInputContext _input;
     private IKeyboard _keyboard;
 
@@ -41,12 +46,14 @@ public class Engine
         _keyboard = _input.Keyboards.FirstOrDefault();
         if (_keyboard is null)
         {
-            Console.WriteLine("no keyboard found");
+            System.Console.WriteLine("no keyboard found");
         }
 
         _gl.Enable(EnableCap.DepthTest);
         _renderer = new Renderer(_gl);
         _camera ??= new Camera();
+        _scene = new KScene();
+        _console = new KConsole(_scene);
 
         _shader = new KShader(_gl, "shader/basicvert.vert", "shader/basicfrag.frag");
         var vertices = new Vertices();
@@ -58,18 +65,10 @@ public class Engine
         _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
         var aspect = _window.Size.X / (float)_window.Size.Y;
-
         var projection = _camera.GetProjectionMatrix(aspect);
-
         var view = _camera.GetViewMatrix();
-        var model = _cube.Transform.GetModelMatrix();
-        var mvp = model * view * projection;
-
-        _cube.Transform.Rotation.Y += (float)(deltaTime * 0.5);
-        _cube.Transform.Rotation.X += (float)(deltaTime * -0.5);
 
         float speed = 3f * (float)deltaTime;
-
 
         if (_keyboard != null)
         {
@@ -86,16 +85,27 @@ public class Engine
                 _camera.Transform.Position += _camera.Right * speed;
         }
 
-
-        _shader.Use();
-        _shader.SetMatrix4("u_MVP", mvp);
-
-        
-        _cube.Material.Apply(_shader);
-        _cube.Material.Color = new Vector3D<float>(0f, 1f, 0f);
-
         _renderer.Clear();
-        _renderer.Draw(_shader, _cube);
+        _shader.Use();
+
+        _scene.AddMesh(_cube);
+
+        foreach (var mesh in _scene.Meshes)
+        {
+            var model = mesh.Transform.GetModelMatrix();
+            var mvp = model * view * projection;
+            _shader.SetMatrix4("u_MVP", mvp);
+
+            mesh.Material.Apply(_shader);
+            _renderer.Draw(_shader, mesh);
+        }
+
+        _cube.Transform.Rotation.Y += 1f * (float)deltaTime;
+        _cube.Material.Color = new Vector3D<float>(
+            (float)(Math.Sin(_window.Time) * 0.5 + 0.5),
+            (float)(Math.Cos(_window.Time) * 0.5 + 0.5),
+            0.5f
+        );
     }
 
     private void OnClose() { }
