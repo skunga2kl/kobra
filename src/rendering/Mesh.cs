@@ -1,4 +1,5 @@
-﻿using Silk.NET.OpenGL;
+﻿using Kobra.Scene;
+using Silk.NET.OpenGL;
 
 namespace Kobra.Rendering
 {
@@ -6,6 +7,7 @@ namespace Kobra.Rendering
     {
         public KVertexArray VAO { get; }
         public uint VertexCount { get; }
+        public Transform Transform = new Transform();
 
         public Mesh(GL gl, float[] vertices, int floatsPerVertex)
         {
