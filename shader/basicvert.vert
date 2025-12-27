@@ -12,6 +12,6 @@ out vec3 Normal;
 void main()
 {
     FragPos = vec3(u_Model * vec4(aPosition, 1.0));
-    Normal = mat3(transpose(inverse(u_Model))) * aNormal;
+    Normal = normalize(mat3(transpose(inverse(u_Model))) * aNormal);
     gl_Position = u_MVP * vec4(aPosition, 1.0);
 }

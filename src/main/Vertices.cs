@@ -1,4 +1,4 @@
-﻿namespace Kobra
+﻿namespace Kobra.Main
 {
     public class Vertices
     {
@@ -52,6 +52,18 @@
              0.5f,-0.5f, 0.5f, 0,-1,0,
             -0.5f,-0.5f,-0.5f, 0,-1,0,
              0.5f,-0.5f,-0.5f, 0,-1,0,
+        };
+
+        public float[] floorVertices =
+        {
+            // positions           // normals
+            -5f, 0f, -5f,          0f, 1f, 0f,
+             5f, 0f, -5f,          0f, 1f, 0f,
+             5f, 0f,  5f,          0f, 1f, 0f,
+
+             5f, 0f,  5f,          0f, 1f, 0f,
+            -5f, 0f,  5f,          0f, 1f, 0f,
+            -5f, 0f, -5f,          0f, 1f, 0f,
         };
     }
 }

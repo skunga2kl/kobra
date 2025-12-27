@@ -6,16 +6,19 @@ namespace Kobra.Scene
     public class KScene
     {
         public List<Mesh> Meshes { get; private set; }
-        public List<DirectionalLight> DirectionalLights { get; private set; }
+        public List<Light> Lights { get; private set; }
 
         public KScene()
         {
             Meshes = new List<Mesh>();
-            DirectionalLights = new List<DirectionalLight>();
+            Lights = new List<Light>();
         }
         public void AddMesh(Mesh mesh)
         {
-            Meshes.Add(mesh);
+            if (!Meshes.Contains(mesh))
+            {
+                Meshes.Add(mesh);
+            }
         }
         public void RemoveMesh(Mesh mesh)
         {
@@ -23,6 +26,14 @@ namespace Kobra.Scene
             {
                 mesh.VAO.Dispose();
                 Meshes.Remove(mesh);
+            }
+        }
+
+        public void AddLight(Light light)
+        {
+            if (!Lights.Contains(light))
+            {
+                Lights.Add(light);
             }
         }
     }
