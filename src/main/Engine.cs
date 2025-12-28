@@ -5,6 +5,8 @@ using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
+using ImGuiNET;
+using Silk.NET.OpenGL.Extensions.ImGui;
 using System.Numerics;
 
 namespace Kobra.Main;
@@ -17,16 +19,20 @@ public class Engine
     private KShader _shader;
     private KScene _scene;
     private Random _random = new Random();
+    private ImGuiController _controller;
 
     private Mesh _cube;
     private Mesh _floor;
+    private Mesh _selectedMesh;
     private Camera _camera;
+    private DirectionalLight _sun;
 
     private IInputContext _input;
     private IKeyboard _keyboard;
     private IMouse _mouse;
     private Vector2D<float> _lastMousePos;
     private bool _firstMove = true;
+    private bool _showEditor = true;
 
     public Engine()
     {
@@ -75,27 +81,38 @@ public class Engine
         _cube = new Mesh(_gl, vertices.cubeVertices, 6);
         _scene.AddMesh(_cube);
 
-        var sun = new DirectionalLight
+        _selectedMesh = _cube;
+
+        _sun = new DirectionalLight
         {
-            Direction = new(),
+            Direction = new(-1, -1, -1),
             Color = new Vector3D<float>(1f, 1f, 1f),
             Intensity = 0.6f
         };
 
-        _scene.AddLight(sun);
+        _scene.AddLight(_sun);
 
         _floor = new Mesh(_gl, vertices.floorVertices, 6);
         _floor.Transform.Position = new Vector3D<float>(0f, -0.5f, 0f);
         _scene.AddMesh(_floor);
+
+        _controller = new ImGuiController(_gl, _window, _input);
     }
 
     private void OnRender(double deltaTime)
     {
         _gl.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
+        _controller.Update((float)deltaTime);
+
+        if (_showEditor)
+        {
+            DrawInspector();
+        }
+
         var aspect = _window.Size.X / (float)_window.Size.Y;
         var projection = _camera.GetProjectionMatrix(aspect);
-        var view = _camera.GetViewMatrix(); 
+        var view = _camera.GetViewMatrix();
 
         float speed = 3f * (float)deltaTime;
 
@@ -115,26 +132,26 @@ public class Engine
 
             if (_keyboard.IsKeyPressed(Key.F1))
             {
-                var cube = Helpers.CreateCubeMesh(_gl); 
-            
+                var cube = Helpers.CreateCubeMesh(_gl);
+
                 float x = (float)(_random.NextDouble() * 10);
                 float y = (float)(_random.NextDouble() * 10);
                 float z = (float)(_random.NextDouble() * 10);
-            
+
                 cube.Transform.Position = new Vector3D<float>(x, y, z);
-            
+
                 cube.Transform.Rotation = new Vector3D<float>(
                     (float)(_random.NextDouble() * 360),
                     (float)(_random.NextDouble() * 360),
                     (float)(_random.NextDouble() * 360)
                 );
-            
+
                 cube.Material.Color = new Vector3D<float>(
                     (float)_random.NextDouble(),
                     (float)_random.NextDouble(),
                     (float)_random.NextDouble()
                 );
-            
+
                 _scene.AddMesh(cube);
             }
 
@@ -144,36 +161,21 @@ public class Engine
                 Console.WriteLine($"scene has {count} meshes");
             }
 
-            if (_keyboard.IsKeyPressed(Key.Escape))
+            if (_keyboard.IsKeyPressed(Key.Tab))
             {
-                _mouse.Cursor.CursorMode = CursorMode.Normal;
+                _showEditor = !_showEditor;
+                _mouse.Cursor.CursorMode =
+                    _showEditor ? CursorMode.Normal : CursorMode.Disabled;
             }
         }
 
         _renderer.Clear();
         _shader.Use();
 
+        _shader.SetVec3("u_LightDirection", _sun.Direction);
+        _shader.SetVec3("u_LightColor", _sun.Color);
+        _shader.SetFloat("u_Intensity", _sun.Intensity);
         _shader.SetVec3("u_ViewPos", _camera.Transform.Position);
-
-        DirectionalLight? dirLight = null;
-
-        foreach (var light in _scene.Lights)
-        {
-            if (light is DirectionalLight dLight)
-            {
-                dirLight = dLight;
-                break;
-            }
-        }
-
-        if (dirLight != null)
-        {
-            _shader.SetVec3("u_LightDirection", dirLight.Direction);
-            _shader.SetVec3("u_LightColor", dirLight.Color);
-            _shader.SetFloat("u_Intensity", dirLight.Intensity);
-        }
-
-        dirLight.Direction = new Vector3D<float>(-1, -1, -1);
 
         foreach (var mesh in _scene.Meshes)
         {
@@ -182,7 +184,7 @@ public class Engine
             var model = mesh.Transform.GetModelMatrix();
             var mvp = model * view * projection;
 
-            _shader.SetMatrix4("u_Model", model);  
+            _shader.SetMatrix4("u_Model", model);
             _shader.SetMatrix4("u_MVP", mvp);
 
             mesh.Material.Apply(_shader);
@@ -195,11 +197,15 @@ public class Engine
             (float)(Math.Cos(_window.Time) * 0.5 + 0.5),
             0.5f
         );
+
+        _controller.Render();
     }
 
     private void OnMouseMove(IMouse mouse, Vector2 position)
     {
         const float sensitivity = 0.3f;
+
+        if (_showEditor) return;
 
         if (_firstMove)
         {
@@ -213,10 +219,72 @@ public class Engine
 
         _lastMousePos = new Vector2D<float>(position.X, position.Y);
 
-        _camera.Transform.Rotation.Y -= deltaX; 
-        _camera.Transform.Rotation.X -= deltaY; 
+        _camera.Transform.Rotation.Y -= deltaX;
+        _camera.Transform.Rotation.X -= deltaY;
 
         _camera.Transform.Rotation.X = Math.Clamp(_camera.Transform.Rotation.X, -89f, 89f);
+    }
+
+    private void DrawInspector()
+    {
+        if (_selectedMesh == null)
+        {
+            return;
+        }
+
+        if (!ImGui.Begin("Inspector"))
+        {
+            ImGui.End();
+            return;
+        }
+
+        ImGui.Text("Transform");
+        ImGui.Separator();
+
+        var pos = new System.Numerics.Vector3(
+            _selectedMesh.Transform.Position.X,
+            _selectedMesh.Transform.Position.Y,
+            _selectedMesh.Transform.Position.Z
+        );
+        if (ImGui.DragFloat3("Position", ref pos))
+        {
+            _selectedMesh.Transform.Position = new Vector3D<float>(pos.X, pos.Y, pos.Z);
+        }
+
+        var rot = new System.Numerics.Vector3(
+            _selectedMesh.Transform.Rotation.X,
+            _selectedMesh.Transform.Rotation.Y,
+            _selectedMesh.Transform.Rotation.Z
+        );
+        if (ImGui.DragFloat3("Rotation", ref rot))
+        {
+            _selectedMesh.Transform.Rotation = new Vector3D<float>(rot.X, rot.Y, rot.Z);
+        }
+
+        var scale = new System.Numerics.Vector3(
+            _selectedMesh.Transform.Scale.X,
+            _selectedMesh.Transform.Scale.Y,
+            _selectedMesh.Transform.Scale.Z
+        );
+        if (ImGui.DragFloat3("Scale", ref scale, 0.1f))
+        {
+            _selectedMesh.Transform.Scale = new Vector3D<float>(scale.X, scale.Y, scale.Z);
+        }
+
+        ImGui.Separator();
+
+        ImGui.Text("Material");
+        var color = new System.Numerics.Vector3(
+            _selectedMesh.Material.Color.X,
+            _selectedMesh.Material.Color.Y,
+            _selectedMesh.Material.Color.Z
+        );
+        if (ImGui.ColorEdit3("Color", ref color))
+        {
+            _selectedMesh.Material.Color = new Vector3D<float>(color.X, color.Y, color.Z);
+        }
+
+        ImGui.End();
     }
 
     private void OnClose() { }
