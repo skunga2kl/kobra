@@ -10,6 +10,7 @@ namespace Kobra.Rendering
         public uint VertexCount { get; }
         public Transform Transform = new();
         public Material Material = new();
+        public String Name = "Mesh";
 
         public Mesh(GL gl, float[] vertices, int floatsPerVertex)
         {

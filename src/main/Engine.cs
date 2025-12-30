@@ -8,6 +8,7 @@ using Silk.NET.Windowing;
 using ImGuiNET;
 using Silk.NET.OpenGL.Extensions.ImGui;
 using System.Numerics;
+using Kobra.Graphics.UI;
 
 namespace Kobra.Main;
 
@@ -20,6 +21,7 @@ public class Engine
     private KScene _scene;
     private Random _random = new Random();
     private ImGuiController _controller;
+    private Inspector _inspector;
 
     private Mesh _cube;
     private Mesh _floor;
@@ -30,9 +32,11 @@ public class Engine
     private IInputContext _input;
     private IKeyboard _keyboard;
     private IMouse _mouse;
+
     private Vector2D<float> _lastMousePos;
     private bool _firstMove = true;
     private bool _showEditor = true;
+    private Dictionary<Key, bool> _keyState = new();
 
     public Engine()
     {
@@ -74,6 +78,7 @@ public class Engine
         _renderer = new Renderer(_gl);
         _camera ??= new Camera();
         _scene = new KScene();
+        _inspector = new Inspector(); 
 
         _shader = new KShader(_gl, "shader/basicvert.vert", "shader/basicfrag.frag");
 
@@ -87,13 +92,15 @@ public class Engine
         {
             Direction = new(-1, -1, -1),
             Color = new Vector3D<float>(1f, 1f, 1f),
-            Intensity = 0.6f
+            Intensity = 0.8f
         };
 
         _scene.AddLight(_sun);
 
         _floor = new Mesh(_gl, vertices.floorVertices, 6);
         _floor.Transform.Position = new Vector3D<float>(0f, -0.5f, 0f);
+        _floor.Name = "Floor";  
+
         _scene.AddMesh(_floor);
 
         _controller = new ImGuiController(_gl, _window, _input);
@@ -107,7 +114,8 @@ public class Engine
 
         if (_showEditor)
         {
-            DrawInspector();
+            _inspector.Draw(_scene, _camera);
+            _hierarchy.Draw(_scene);
         }
 
         var aspect = _window.Size.X / (float)_window.Size.Y;
@@ -151,17 +159,18 @@ public class Engine
                     (float)_random.NextDouble(),
                     (float)_random.NextDouble()
                 );
+                cube.Name = $"Cube {_scene.Meshes.Count}";
 
                 _scene.AddMesh(cube);
             }
 
-            if (_keyboard.IsKeyPressed(Key.F2))
+            if (IsKeyPressed(Key.F2))
             {
                 var count = _scene.Meshes.Count;
                 Console.WriteLine($"scene has {count} meshes");
             }
 
-            if (_keyboard.IsKeyPressed(Key.Tab))
+            if (IsKeyPressed(Key.Tab))
             {
                 _showEditor = !_showEditor;
                 _mouse.Cursor.CursorMode =
@@ -192,11 +201,6 @@ public class Engine
         }
 
         _cube.Transform.Rotation.Y += 1f * (float)deltaTime;
-        _cube.Material.Color = new Vector3D<float>(
-            (float)(Math.Sin(_window.Time) * 0.5 + 0.5),
-            (float)(Math.Cos(_window.Time) * 0.5 + 0.5),
-            0.5f
-        );
 
         _controller.Render();
     }
@@ -225,66 +229,14 @@ public class Engine
         _camera.Transform.Rotation.X = Math.Clamp(_camera.Transform.Rotation.X, -89f, 89f);
     }
 
-    private void DrawInspector()
+    private bool IsKeyPressed(Key key)
     {
-        if (_selectedMesh == null)
-        {
-            return;
-        }
+        bool isPressed = _keyboard?.IsKeyPressed(key) ?? false;
+        bool wasPressed = _keyState.ContainsKey(key) && _keyState[key];
 
-        if (!ImGui.Begin("Inspector"))
-        {
-            ImGui.End();
-            return;
-        }
+        _keyState[key] = isPressed;
 
-        ImGui.Text("Transform");
-        ImGui.Separator();
-
-        var pos = new System.Numerics.Vector3(
-            _selectedMesh.Transform.Position.X,
-            _selectedMesh.Transform.Position.Y,
-            _selectedMesh.Transform.Position.Z
-        );
-        if (ImGui.DragFloat3("Position", ref pos))
-        {
-            _selectedMesh.Transform.Position = new Vector3D<float>(pos.X, pos.Y, pos.Z);
-        }
-
-        var rot = new System.Numerics.Vector3(
-            _selectedMesh.Transform.Rotation.X,
-            _selectedMesh.Transform.Rotation.Y,
-            _selectedMesh.Transform.Rotation.Z
-        );
-        if (ImGui.DragFloat3("Rotation", ref rot))
-        {
-            _selectedMesh.Transform.Rotation = new Vector3D<float>(rot.X, rot.Y, rot.Z);
-        }
-
-        var scale = new System.Numerics.Vector3(
-            _selectedMesh.Transform.Scale.X,
-            _selectedMesh.Transform.Scale.Y,
-            _selectedMesh.Transform.Scale.Z
-        );
-        if (ImGui.DragFloat3("Scale", ref scale, 0.1f))
-        {
-            _selectedMesh.Transform.Scale = new Vector3D<float>(scale.X, scale.Y, scale.Z);
-        }
-
-        ImGui.Separator();
-
-        ImGui.Text("Material");
-        var color = new System.Numerics.Vector3(
-            _selectedMesh.Material.Color.X,
-            _selectedMesh.Material.Color.Y,
-            _selectedMesh.Material.Color.Z
-        );
-        if (ImGui.ColorEdit3("Color", ref color))
-        {
-            _selectedMesh.Material.Color = new Vector3D<float>(color.X, color.Y, color.Z);
-        }
-
-        ImGui.End();
+        return isPressed && !wasPressed;
     }
 
     private void OnClose() { }
